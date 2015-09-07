@@ -1,0 +1,10 @@
+{
+  "version": "0.0.5",
+  "name": "com.heytz.mxsdkwrapper",
+  "cordova_name": "mxsdkwrapper",
+  "platforms": [
+    "ios",
+    "android"
+  ],
+  "engines": []
+}
