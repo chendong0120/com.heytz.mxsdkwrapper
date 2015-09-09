@@ -13,6 +13,7 @@
     CDVInvokedUrlCommand * commandHolder;
     NSString *deviceIp ;
     NSString *userToken ;
+    NSString * bssid;
 }
 - (void)setDeviceWifi:(CDVInvokedUrlCommand*)command;
 @end
@@ -74,7 +75,10 @@
 
             [op setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
                 NSLog(@"JSON: %@", responseObject);
-                NSDictionary *ret = [NSDictionary dictionaryWithObjectsAndKeys:userToken,@"active_token", nil];
+                NSDictionary *ret = [NSDictionary dictionaryWithObjectsAndKeys:
+                    userToken,@"active_token",
+                    bssid,@"mac",
+                    nil];
 
                 CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
@@ -126,7 +130,7 @@
 
         NSString * bssidPrefix = @"C89346";
         NSString * deviceNameSplit = [deviceName componentsSeparatedByString:@"("][1];
-        NSString * bssid = [bssidPrefix stringByAppendingString:[deviceNameSplit componentsSeparatedByString:@")"][0]];
+        bssid = [bssidPrefix stringByAppendingString:[deviceNameSplit componentsSeparatedByString:@")"][0]];
 
         NSLog(@"bssid:%@", bssid);
         deviceIp = [[[configDict objectForKey:@"C"][1] objectForKey:@"C"][3] objectForKey:@"C"];
