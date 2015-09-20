@@ -89,8 +89,8 @@ public class mxsdkwrapper extends CordovaPlugin {
     /**
      * Step1. Call FTC Service to start transmit settings.
      *
-     * @param wifiSSID
-     * @param wifiKey
+     * @param wifiSSID @desc wifi ssid
+     * @param wifiKey  @desc corresponding wifi key
      */
     private void transmitSettings(String wifiSSID, String wifiKey) {
         Log.i(TAG, " Step1. Call FTC Service to transmit settings. SSID = " + wifiSSID + ", Password = " + wifiKey);
@@ -128,15 +128,20 @@ public class mxsdkwrapper extends CordovaPlugin {
                             // we need to check the module port has started yet,
                             // may cause the problem that it is always running
                             // to fix it, introduce a timeoutValue to 240 seconds
-                            (new Thread(new Runnable() {
+                            new Thread(new Runnable() {
                                 @Override
                                 public void run() {
                                     boolean isReady = false;
-                                    int timeoutValue = 2*120;
-                                    while (!isReady || !(timeoutValue == 0) {
-                                        Socket client = null;
-                                        Thread.sleep(1* 1000L);
-                                        timeoutValue--;
+                                    int timeoutValue = activateTimeout;
+                                    while (!isReady || !(timeoutValue == 0)) {
+                                        Socket client;
+                                        try {
+                                            Thread.sleep(1000L);
+                                            timeoutValue--;
+                                        } catch (InterruptedException e) {
+                                            Log.e(TAG, e.getMessage());
+                                        }
+
                                         try {
 
                                             client = new Socket(deviceIP, Integer.parseInt(activatePort));
@@ -144,11 +149,14 @@ public class mxsdkwrapper extends CordovaPlugin {
                                             client = null;
                                             isReady = true;
                                         } catch (Exception e) {
+                                            Log.e(TAG, e.getMessage());
                                             try {
                                                 Thread.sleep(3 * 1000L);
-                                                timeoutValue = timeoutValue -3;
+                                                timeoutValue = timeoutValue - 3;
                                             } catch (InterruptedException e1) {
-                                                e1.printStackTrace();
+
+                                                Log.e(TAG, e1.getMessage());
+
                                             }
                                         }
                                     }
@@ -161,27 +169,28 @@ public class mxsdkwrapper extends CordovaPlugin {
                                         try {
                                             activeJSON = new JSONObject(stringResult);
                                         } catch (JSONException e) {
-                                            e.printStackTrace();
+                                            Log.e(TAG, e.getMessage());
                                         }
                                         easyLinkCallbackContext.success(activeJSON);
+                                    } else {
+                                        Log.e(TAG, "activate failed");
+                                        easyLinkCallbackContext.error("JSON obj error");
                                     }
                                 }
-                            })).start();
+                            }).start();
 
 
                             //Call Step 6. - pls. DO NOT REMOVE
                             //Authorize(activeToken);
                             //easyLinkCallbackContext.success("{\"ip\": \"" + deviceIP + ", \"user_token\": \"" + activeToken + "\"}");
-
                         } catch (JSONException e) {
                             Log.e(TAG, e.getMessage());
-                            easyLinkCallbackContext.error("JSON obj error");
+                            easyLinkCallbackContext.error("parse JSON obj error");
                         }
                     } else {
                         Log.e(TAG, "socket data is empty!");
-                        // _callbackContext.error("FTC socket data empty");
+                        easyLinkCallbackContext.error("FTC socket data empty");
                     }
-
                 }
 
                 @Override
@@ -189,7 +198,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                 }
             });
         } else {
-            easyLinkCallbackContext.error("args is empty or null");
+            easyLinkCallbackContext.error("args error");
         }
     }
 
