@@ -102,7 +102,6 @@ public class mxsdkwrapper extends CordovaPlugin {
                 @Override
                 public void onFTCfinished(String ip,
                                           String data) {
-                    //Log.d("FTCEnd", ip + " " + data);
                     elapi.stopEasyLink();
 
                     if (!"".equals(data)) {
@@ -126,20 +125,28 @@ public class mxsdkwrapper extends CordovaPlugin {
                             //Call Step 3,4,5.
                             Log.d(TAG, String.valueOf(activateTimeout));
 
-
+                            // we need to check the module port has started yet,
+                            // may cause the problem that it is always running
+                            // to fix it, introduce a timeoutValue to 240 seconds
                             (new Thread(new Runnable() {
                                 @Override
                                 public void run() {
                                     boolean isReady = false;
-                                    while (!isReady) {
+                                    int timeoutValue = 2*120;
+                                    while (!isReady || !(timeoutValue == 0) {
                                         Socket client = null;
+                                        Thread.sleep(1* 1000L);
+                                        timeoutValue--;
                                         try {
+
                                             client = new Socket(deviceIP, Integer.parseInt(activatePort));
                                             client.close();
+                                            client = null;
                                             isReady = true;
                                         } catch (Exception e) {
                                             try {
                                                 Thread.sleep(3 * 1000L);
+                                                timeoutValue = timeoutValue -3;
                                             } catch (InterruptedException e1) {
                                                 e1.printStackTrace();
                                             }
