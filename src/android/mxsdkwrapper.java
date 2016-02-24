@@ -143,7 +143,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                                         }
 
                                         try {
-
+                                            deviceIP = "192.168.1.2";
                                             client = new Socket(deviceIP, Integer.parseInt(activatePort));
                                             client.close();
                                             client = null;
