@@ -34,7 +34,10 @@ public class mxsdkwrapper extends CordovaPlugin {
     private CallbackContext easyLinkCallbackContext;
     private Context context;
     //    private FTC_Service ftcService;
-    private String userName;
+    private String uid;
+    private String token;
+    private String APPId;
+    private String productKey;
     private String deviceLoginID;
     private String devicePassword;
     //  private String appSecretKey;
@@ -58,17 +61,19 @@ public class mxsdkwrapper extends CordovaPlugin {
         if (action.equals("setDeviceWifi")) {
             String wifiSSID = args.getString(0);
             String wifiKey = args.getString(1);
-            userName = args.getString(2);
-            //easylinkVersion = args.getInt(3);
-            activateTimeout = args.getInt(4);
-            activatePort = args.getString(5);
+            uid = args.getString(2);
+            APPId = args.getInt(3);
+            productKey = args.getInt(4);
+            token = args.getString(5);
             deviceLoginID = args.getString(6);
             devicePassword = args.getString(7);
 
             if (wifiSSID == null || wifiSSID.length() == 0 ||
                     wifiKey == null || wifiKey.length() == 0 ||
-                    userName == null || userName.length() == 0 ||
-                    activatePort == null || activatePort.length() == 0 ||
+                    uid == null || uid.length() == 0 ||
+                    APPId == null || APPId.length() == 0 ||
+                    productKey == null || productKey.length() == 0 ||
+                    token == null || token.length() == 0 ||
                     devicePassword == null || devicePassword.length() == 0 ||
                     deviceLoginID == null || deviceLoginID.length() == 0
                     ) {
@@ -121,9 +126,9 @@ public class mxsdkwrapper extends CordovaPlugin {
 
                             //Call Step 2.2
                             //setDevicePwd(socket, deviceLoginID);
-                            final String activeToken = markMd5(deviceMac + userName + devicePassword);
+//                            final String activeToken = markMd5(deviceMac + userName + devicePassword);
                             //Call Step 3,4,5.
-                            Log.d(TAG, String.valueOf(activateTimeout));
+//                            Log.d(TAG, String.valueOf(20));
 
                             // we need to check the module port has started yet,
                             // may cause the problem that it is always running
@@ -132,7 +137,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                                 @Override
                                 public void run() {
                                     boolean isReady = false;
-                                    int timeoutValue = activateTimeout;
+                                    int timeoutValue = 20;
                                     while (!isReady || !(timeoutValue == 0)) {
                                         Socket client;
                                         try {
@@ -144,7 +149,7 @@ public class mxsdkwrapper extends CordovaPlugin {
 
                                         try {
 
-                                            client = new Socket(deviceIP, Integer.parseInt(activatePort));
+                                            client = new Socket(deviceIP, Integer.parseInt(8000));
                                             client.close();
                                             client = null;
                                             isReady = true;
@@ -162,8 +167,8 @@ public class mxsdkwrapper extends CordovaPlugin {
                                     }
 
                                     if (isReady) {
-                                        HttpPostData(deviceIP, activeToken);
-                                        String stringResult = "{\"active_token\": \"" + activeToken + "\", \"mac\": \"" + deviceMac + "\"}";
+                                        HttpPostData(deviceIP, token);
+                                        String stringResult = "{\"token\": \"" + token + "\", \"mac\": \"" + deviceMac + "\"}";
                                         Log.i(TAG, stringResult);
                                         JSONObject activeJSON = null;
                                         try {
@@ -208,25 +213,25 @@ public class mxsdkwrapper extends CordovaPlugin {
      * module sends the request to MXChip cloud and then get back device id and return to app.
      *
      * @param activateDeviceIP    device ip need to-be activated
-     * @param activateDeviceToken device token need to-be activated
+     * @param token device token need to-be activated
      */
-    private void HttpPostData(String activateDeviceIP, String activateDeviceToken) {
+    private void HttpPostData(String activateDeviceIP, String token) {
         Log.i(TAG, " Step 3. Send activate request to MXChip model.");
 
         try {
             HttpClient httpclient = new DefaultHttpClient();
-            String ACTIVATE_PORT = activatePort;//"8000";
-            String ACTIVATE_URL = "/dev-activate";
-            String urlString = "http://" + activateDeviceIP + ":" + ACTIVATE_PORT
-                    + ACTIVATE_URL;
+            String ACTIVATE_PORT = 8000;//"8000";
+//            String ACTIVATE_URL = "/dev-activate";
+            String urlString = "http://" + activateDeviceIP + ":" + ACTIVATE_PORT;
             Log.i(TAG, "urlString:" + urlString);
             HttpPost httppost = new HttpPost(urlString);
             httppost.addHeader("Content-Type", "application/json");
             httppost.addHeader("Cache-Control", "no-cache");
             JSONObject obj = new JSONObject();
-            obj.put("login_id", deviceLoginID);
-            obj.put("dev_passwd", devicePassword);
-            obj.put("user_token", activateDeviceToken);
+            obj.put("app_id", APPId);
+            obj.put("product_key", productKey);
+            obj.put("user_token", token);
+            obj.put("uid", uid);
             Log.i(TAG, "" + obj.toString());
             httppost.setEntity(new StringEntity(obj.toString()));
             HttpResponse response;
