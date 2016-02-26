@@ -62,8 +62,8 @@ public class mxsdkwrapper extends CordovaPlugin {
             String wifiSSID = args.getString(0);
             String wifiKey = args.getString(1);
             uid = args.getString(2);
-            APPId = args.getInt(3);
-            productKey = args.getInt(4);
+            APPId = args.getString(3);
+            productKey = args.getString(4);
             token = args.getString(5);
             deviceLoginID = args.getString(6);
             devicePassword = args.getString(7);
