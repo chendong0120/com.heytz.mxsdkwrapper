@@ -220,7 +220,7 @@ public class mxsdkwrapper extends CordovaPlugin {
 
         try {
             HttpClient httpclient = new DefaultHttpClient();
-            String ACTIVATE_PORT = 8000;//"8000";
+            String ACTIVATE_PORT = "8000";//"8000";
 //            String ACTIVATE_URL = "/dev-activate";
             String urlString = "http://" + activateDeviceIP + ":" + ACTIVATE_PORT;
             Log.i(TAG, "urlString:" + urlString);
