@@ -278,7 +278,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                 easyLinkCallbackContext.error("Device activate failed.");
             }
 
-        } catch (NoSuchAlgorithmException e) {
+        } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }
     }
