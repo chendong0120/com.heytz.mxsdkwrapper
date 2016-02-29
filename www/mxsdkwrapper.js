@@ -21,4 +21,11 @@ exports.setDeviceWifi = function (wifiSSID,
             moduleDefaultPass
         ]);
 };
+exports.sendDidVerification = function (did,
+                                        success, error) {
+    exec(success, error, "mxsdkwrapper", "sendDidVerification",
+        [
+            did
+        ]);
+};
 

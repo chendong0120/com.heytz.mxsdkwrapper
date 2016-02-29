@@ -34,6 +34,8 @@ public class mxsdkwrapper extends CordovaPlugin {
     private CallbackContext easyLinkCallbackContext;
     private Context context;
     //    private FTC_Service ftcService;
+    private String mac;
+    private String deviceIP;
     private String uid;
     private String token;
     private String APPId;
@@ -88,6 +90,10 @@ public class mxsdkwrapper extends CordovaPlugin {
             this.transmitSettings(wifiSSID, wifiKey);
             return true;
         }
+        if (action.equals("sendDidVerification")) {
+            String did = args.getString(0);
+            sendDidVerification(did);
+        }
         return false;
     }
 
@@ -115,7 +121,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                             jsonObj = new JSONObject(data);
 
                             String deviceName = jsonObj.getString("N");
-                            final String deviceIP = jsonObj.getJSONArray("C")
+                            deviceIP = jsonObj.getJSONArray("C")
                                     .getJSONObject(1).getJSONArray("C")
                                     .getJSONObject(3).getString("C");
                             Log.i(TAG, "findedDeviceIP:" + deviceIP);
@@ -167,16 +173,8 @@ public class mxsdkwrapper extends CordovaPlugin {
                                     }
 
                                     if (isReady) {
+                                        mac = deviceMac;
                                         HttpPostData(deviceIP, token);
-                                        String stringResult = "{\"token\": \"" + token + "\", \"mac\": \"" + deviceMac + "\"}";
-                                        Log.i(TAG, stringResult);
-                                        JSONObject activeJSON = null;
-                                        try {
-                                            activeJSON = new JSONObject(stringResult);
-                                        } catch (JSONException e) {
-                                            Log.e(TAG, e.getMessage());
-                                        }
-                                        easyLinkCallbackContext.success(activeJSON);
                                     } else {
                                         Log.e(TAG, "activate failed");
                                         easyLinkCallbackContext.error("JSON obj error");
@@ -212,8 +210,8 @@ public class mxsdkwrapper extends CordovaPlugin {
      * Step 3,4,5. Send activate request to module,
      * module sends the request to MXChip cloud and then get back device id and return to app.
      *
-     * @param activateDeviceIP    device ip need to-be activated
-     * @param token device token need to-be activated
+     * @param activateDeviceIP device ip need to-be activated
+     * @param token            device token need to-be activated
      */
     private void HttpPostData(String activateDeviceIP, String token) {
         Log.i(TAG, " Step 3. Send activate request to MXChip model.");
@@ -245,7 +243,10 @@ public class mxsdkwrapper extends CordovaPlugin {
                 //Get device ID and save in class variable.
                 String deviceID = jsonObject.getString("device_id");
                 Log.i(TAG, "deviceID:" + deviceID);
-
+                JSONObject activeJSON = null;
+                String stringResult = "{\"did\": \"" + deviceID + "\", \"mac\": \"" + deviceMac + "\"}";
+                activeJSON = new JSONObject(stringResult);
+                easyLinkCallbackContext.success(activeJSON);
             } else {
                 easyLinkCallbackContext.error("Device activate failed.");
             }
@@ -254,6 +255,33 @@ public class mxsdkwrapper extends CordovaPlugin {
         }
     }
 
+    private void sendDidVerification(String did) {
+        try {
+            HttpClient httpclient = new DefaultHttpClient();
+            String ACTIVATE_PORT = "8000";//"8000";
+            String urlString = "http://" + deviceIP + ":" + ACTIVATE_PORT;
+            HttpPost httppost = new HttpPost(urlString);
+            httppost.addHeader("Content-Type", "application/json");
+            httppost.addHeader("Cache-Control", "no-cache");
+            JSONObject obj = new JSONObject();
+            obj.put("device_id", did);
+            httppost.setEntity(new StringEntity(obj.toString()));
+            HttpResponse response;
+            response = httpclient.execute(httppost);
+            int respCode = response.getStatusLine().getStatusCode();
+            Log.i(TAG, "respCode:" + respCode);
+            String responsesString = EntityUtils.toString(response.getEntity());
+            Log.i(TAG, "responsesString:" + responsesString);
+            if (respCode == HttpURLConnection.HTTP_OK) {
+
+            } else {
+                easyLinkCallbackContext.error("Device activate failed.");
+            }
+
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(TAG, e.getMessage());
+        }
+    }
 
     /**
      * @return 0 if we don't get the mobile device ip, else the mobile device ip
