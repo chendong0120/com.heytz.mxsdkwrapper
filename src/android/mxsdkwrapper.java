@@ -244,7 +244,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                 String deviceID = jsonObject.getString("device_id");
                 Log.i(TAG, "deviceID:" + deviceID);
                 JSONObject activeJSON = null;
-                String stringResult = "{\"did\": \"" + deviceID + "\", \"mac\": \"" + deviceMac + "\"}";
+                String stringResult = "{\"did\": \"" + deviceID + "\", \"mac\": \"" + mac + "\"}";
                 activeJSON = new JSONObject(stringResult);
                 easyLinkCallbackContext.success(activeJSON);
             } else {
