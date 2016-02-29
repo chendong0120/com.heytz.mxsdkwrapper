@@ -20,6 +20,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.security.MessageDigest;
@@ -46,6 +49,7 @@ public class mxsdkwrapper extends CordovaPlugin {
     //  private int easylinkVersion;
     private int activateTimeout;
     private String activatePort;
+    private Socket socket = null;
 
 
     /**
@@ -93,6 +97,7 @@ public class mxsdkwrapper extends CordovaPlugin {
         if (action.equals("sendDidVerification")) {
             String did = args.getString(0);
             sendDidVerification(did);
+            return true;
         }
         return false;
     }
@@ -143,9 +148,8 @@ public class mxsdkwrapper extends CordovaPlugin {
                                 @Override
                                 public void run() {
                                     boolean isReady = false;
-                                    int timeoutValue = 20;
+                                    int timeoutValue = 30;
                                     while (!isReady || !(timeoutValue == 0)) {
-                                        Socket client;
                                         try {
                                             Thread.sleep(1000L);
                                             timeoutValue--;
@@ -155,10 +159,47 @@ public class mxsdkwrapper extends CordovaPlugin {
 
                                         try {
 
-                                            client = new Socket(deviceIP, 8000);
-                                            client.close();
-                                            client = null;
-                                            isReady = true;
+//                                            client = new Socket(deviceIP, 8000);
+//                                            client.close();
+//                                            client = null;
+//                                            isReady = true;
+                                            try {
+                                                while (!isReady) {
+                                                    socket = new Socket(deviceIP, 8000);
+                                                    isReady = true;
+                                                }
+                                            } catch (Exception se) {
+                                                Log.e(TAG, se.toString());
+                                            }
+                                            //socket = new Socket("192.168.10.63", port);
+                                            if (isReady) {
+                                                final OutputStream os = socket.getOutputStream();
+                                                String cmd = "{" + "\"app_id\":\"" + APPId + "\"," +
+                                                        "\"product_key\":\"" + productKey + "\"," +
+                                                        "\"user_token\":\"" + token + "\"," +
+                                                        "\"uid\":\"" + uid +
+                                                        "\"}";
+                                                os.write(cmd.getBytes());
+                                                Log.i(TAG, cmd);
+
+                                                InputStream is = socket.getInputStream();
+                                                byte[] reply = new byte[0];
+                                                try {
+                                                    reply = readStream(is);
+                                                } catch (Exception e) {
+                                                    Log.e(TAG, e.toString());
+                                                    e.printStackTrace();
+                                                }
+
+                                                final String replyMessages = new String(reply);
+                                                JSONObject activeJSON = null;
+                                                String stringResult = "{\"did\": \"" + replyMessages + "\", \"mac\": \"" + mac + "\"}";
+                                                activeJSON = new JSONObject(replyMessages);
+                                                easyLinkCallbackContext.success(activeJSON);
+                                                if (reply.length > 0) {
+                                                    break;
+                                                }
+                                            }
                                         } catch (Exception e) {
                                             Log.e(TAG, e.getMessage());
                                             try {
@@ -172,13 +213,13 @@ public class mxsdkwrapper extends CordovaPlugin {
                                         }
                                     }
 
-                                    if (isReady) {
-                                        mac = deviceMac;
-                                        HttpPostData(deviceIP, token);
-                                    } else {
-                                        Log.e(TAG, "activate failed");
-                                        easyLinkCallbackContext.error("JSON obj error");
-                                    }
+//                                    if (isReady) {
+//                                        mac = deviceMac;
+//                                        HttpPostData(deviceIP, token);
+//                                    } else {
+//                                        Log.e(TAG, "activate failed");
+//                                        easyLinkCallbackContext.error("JSON obj error");
+//                                    }
                                 }
                             }).start();
 
@@ -257,30 +298,34 @@ public class mxsdkwrapper extends CordovaPlugin {
 
     private void sendDidVerification(String did) {
         try {
-            HttpClient httpclient = new DefaultHttpClient();
-            String ACTIVATE_PORT = "8000";//"8000";
-            String urlString = "http://" + deviceIP + ":" + ACTIVATE_PORT;
-            HttpPost httppost = new HttpPost(urlString);
-            httppost.addHeader("Content-Type", "application/json");
-            httppost.addHeader("Cache-Control", "no-cache");
-            JSONObject obj = new JSONObject();
-            obj.put("device_id", did);
-            httppost.setEntity(new StringEntity(obj.toString()));
-            HttpResponse response;
-            response = httpclient.execute(httppost);
-            int respCode = response.getStatusLine().getStatusCode();
-            Log.i(TAG, "respCode:" + respCode);
-            String responsesString = EntityUtils.toString(response.getEntity());
-            Log.i(TAG, "responsesString:" + responsesString);
-            if (respCode == HttpURLConnection.HTTP_OK) {
-
-            } else {
-                easyLinkCallbackContext.error("Device activate failed.");
-            }
-
+            final OutputStream os = socket.getOutputStream();
+            String cmd = "{" + "\"device_id\":\"" + did +
+                    "\"}";
+            os.write(cmd.getBytes());
+//            if (socket != null) {
+//                try {
+//                    socket.close();
+//                    Log.i(TAG, "Socket closed.");
+//                } catch (Exception e) {
+//                    Log.e(TAG, e.toString());
+//                    e.printStackTrace();
+//                }
+//            }
         } catch (Exception e) {
+            easyLinkCallbackContext.error("Device activate failed.");
             Log.e(TAG, e.getMessage());
         }
+    }
+
+    private static byte[] readStream(InputStream inStream) throws Exception {
+        int count = 0;
+        while (count == 0) {
+            count = inStream.available();
+            Log.i(TAG, String.valueOf(count));
+        }
+        byte[] b = new byte[count];
+        inStream.read(b);
+        return b;
     }
 
     /**
