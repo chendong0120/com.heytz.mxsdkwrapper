@@ -9,18 +9,22 @@
     // Member variables go here.
     EASYLINK *easylink_config;
     NSMutableDictionary *deviceIPConfig;
-    NSString *loginID;
+    NSString *uid;
     CDVInvokedUrlCommand * commandHolder;
     NSString *deviceIp ;
     NSString *userToken ;
     int acitvateTimeout;
     NSString* activatePort;
-    NSString* bssid;
+    NSString* device_id;
     //
     NSString* deviceLoginId;
     NSString* devicePass;
+
+
+
 }
 - (void)setDeviceWifi:(CDVInvokedUrlCommand*)command;
+- (void)sendDidVerification:(CDVInvokedUrlCommand*)command;
 @end
 
 @implementation mxsdkwrapper
@@ -36,23 +40,14 @@
     }
     NSString* wifiSSID = [command.arguments objectAtIndex:0];
     NSString* wifiKey = [command.arguments objectAtIndex:1];
-    loginID = [command.arguments objectAtIndex:2];
+    uid = [command.arguments objectAtIndex:2];
+    APPId = [command.arguments objectAtIndex:3];
+    productKey = [command.arguments objectAtIndex:4];
+    token = [command.arguments objectAtIndex:5];
     deviceLoginId = [command.arguments objectAtIndex:6];
     devicePass = [command.arguments objectAtIndex:7];
-    int easylinkVersion;
-    activatePort = [command.arguments objectAtIndex:5];
     
-    if ([command.arguments objectAtIndex:3] == nil || [command.arguments objectAtIndex:4] == nil) {
-        NSLog(@"Error: arguments easylink_version & timeout");
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        return;
-    }else {
-        easylinkVersion = [[command.arguments objectAtIndex:3] intValue];
-        acitvateTimeout = [[command.arguments objectAtIndex:4] intValue];
-    }
-    
-    if (wifiSSID == nil || wifiSSID.length == 0 || wifiKey == nil || wifiKey.length == 0 || loginID == nil || loginID.length == 0 || activatePort==nil || activatePort.length == 0 || deviceLoginId == nil || deviceLoginId.length == 0
+    if (wifiSSID == nil || wifiSSID.length == 0 || wifiKey == nil || wifiKey.length == 0 || uid == nil || uid.length == 0 || activatePort==nil || activatePort.length == 0 || deviceLoginId == nil || deviceLoginId.length == 0
         || devicePass == nil || devicePass.length==0) {
         NSLog(@"Error: arguments");
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
@@ -66,7 +61,7 @@
     //this should be always YES as currently only support DHCP mode
     [wlanConfig setObject:[NSNumber numberWithBool:@YES] forKey:KEY_DHCP];
     //use default value
-    EasyLinkMode mode = (EasyLinkMode)easylinkVersion;
+    EasyLinkMode mode = (EasyLinkMode)3;
     if (!mode) {
         mode = EASYLINK_V2_PLUS;
     }
@@ -76,26 +71,26 @@
     
 }
 
+- (void)setDeviceWifi:(CDVInvokedUrlCommand*)command
+{
+    commandHolder = command;
+    sendDidVerification
+}
+
 - (void) onDisconnectFromFTC:(NSNumber *)client
 {
     @try {
         if (deviceIp!=nil) {
-            if (deviceIp!=nil && userToken!=nil) {
-                NSString * activateUrl = @"dev-activate";
+            if (deviceIp!=nil) {
                 NSString * requestUrl =[[NSString alloc] init];
-                requestUrl = [[[[[[requestUrl stringByAppendingString:@"http://"] stringByAppendingString:deviceIp]
+                requestUrl = [[[[[requestUrl stringByAppendingString:@"http://"] stringByAppendingString:deviceIp]
                                  stringByAppendingString:@":"]
-                                stringByAppendingString:activatePort]
-                               stringByAppendingString:@"/"]
-                              stringByAppendingString:activateUrl];
-                NSLog(@"request url: %@", requestUrl);
-                NSLog(@"user token: %@", userToken);
-                NSLog(@"device user: %@", deviceLoginId);
-                NSLog(@"device pass: %@", devicePass);
+                                stringByAppendingString:"8000"]
+                               stringByAppendingString:@"/"];
+
+                NSDictionary *parameters = @{@"app_id":APPId,@"product_key":productKey,@"user_token":token,@"uid":uid};
                 
-                NSDictionary *parameters = @{@"login_id":deviceLoginId,@"dev_passwd":devicePass,@"user_token":userToken};
-                
-                sleep(acitvateTimeout);
+                sleep(1000);
                 
                 AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
                 
@@ -106,8 +101,8 @@
                 [op setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
                     NSLog(@"JSON: %@", responseObject);
                     NSDictionary *ret = [NSDictionary dictionaryWithObjectsAndKeys:
-                                         userToken,@"active_token",
-                                         bssid, @"mac",
+                                         device_id,@"device_id",
+                                         mac, @"mac",
                                          nil];
                     
                     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
@@ -173,7 +168,6 @@
         NSLog(@"bssid:%@", bssid);
         deviceIp = [[[configDict objectForKey:@"C"][1] objectForKey:@"C"][3] objectForKey:@"C"];
         NSLog(@"device ip: %@", deviceIp);
-        userToken = [[[bssid stringByAppendingString:loginID] stringByAppendingString:devicePass] markMD5];
     }
     @catch (NSException *e){
         NSLog(@"error - save configuration..." );

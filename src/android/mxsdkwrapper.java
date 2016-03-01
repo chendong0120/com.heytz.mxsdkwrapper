@@ -10,23 +10,13 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import java.net.HttpURLConnection;
 import java.net.Socket;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * This class starts transmit to activation
@@ -96,6 +86,7 @@ public class mxsdkwrapper extends CordovaPlugin {
         }
         if (action.equals("sendDidVerification")) {
             String did = args.getString(0);
+            easyLinkCallbackContext = callbackContext;
             sendDidVerification(did);
             return true;
         }
@@ -247,54 +238,7 @@ public class mxsdkwrapper extends CordovaPlugin {
     }
 
 
-    /**
-     * Step 3,4,5. Send activate request to module,
-     * module sends the request to MXChip cloud and then get back device id and return to app.
-     *
-     * @param activateDeviceIP device ip need to-be activated
-     * @param token            device token need to-be activated
-     */
-    private void HttpPostData(String activateDeviceIP, String token) {
-        Log.i(TAG, " Step 3. Send activate request to MXChip model.");
 
-        try {
-            HttpClient httpclient = new DefaultHttpClient();
-            String ACTIVATE_PORT = "8000";//"8000";
-//            String ACTIVATE_URL = "/dev-activate";
-            String urlString = "http://" + activateDeviceIP + ":" + ACTIVATE_PORT;
-            Log.i(TAG, "urlString:" + urlString);
-            HttpPost httppost = new HttpPost(urlString);
-            httppost.addHeader("Content-Type", "application/json");
-            httppost.addHeader("Cache-Control", "no-cache");
-            JSONObject obj = new JSONObject();
-            obj.put("app_id", APPId);
-            obj.put("product_key", productKey);
-            obj.put("user_token", token);
-            obj.put("uid", uid);
-            Log.i(TAG, "" + obj.toString());
-            httppost.setEntity(new StringEntity(obj.toString()));
-            HttpResponse response;
-            response = httpclient.execute(httppost);
-            int respCode = response.getStatusLine().getStatusCode();
-            Log.i(TAG, "respCode:" + respCode);
-            String responsesString = EntityUtils.toString(response.getEntity());
-            Log.i(TAG, "responsesString:" + responsesString);
-            if (respCode == HttpURLConnection.HTTP_OK) {
-                JSONObject jsonObject = new JSONObject(responsesString);
-                //Get device ID and save in class variable.
-                String deviceID = jsonObject.getString("device_id");
-                Log.i(TAG, "deviceID:" + deviceID);
-                JSONObject activeJSON = null;
-                String stringResult = "{\"did\": \"" + deviceID + "\", \"mac\": \"" + mac + "\"}";
-                activeJSON = new JSONObject(stringResult);
-                easyLinkCallbackContext.success(activeJSON);
-            } else {
-                easyLinkCallbackContext.error("Device activate failed.");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }
-    }
 
     private void sendDidVerification(String did) {
         try {
@@ -302,15 +246,16 @@ public class mxsdkwrapper extends CordovaPlugin {
             String cmd = "{" + "\"device_id\":\"" + did +
                     "\"}";
             os.write(cmd.getBytes());
-//            if (socket != null) {
-//                try {
-//                    socket.close();
-//                    Log.i(TAG, "Socket closed.");
-//                } catch (Exception e) {
-//                    Log.e(TAG, e.toString());
-//                    e.printStackTrace();
-//                }
-//            }
+            easyLinkCallbackContext.success("OK");
+            if (socket != null) {
+                try {
+                    socket.close();
+                    Log.i(TAG, "Socket closed.");
+                } catch (Exception e) {
+                    Log.e(TAG, e.toString());
+                    e.printStackTrace();
+                }
+            }
         } catch (Exception e) {
             easyLinkCallbackContext.error("Device activate failed.");
             Log.e(TAG, e.getMessage());
@@ -343,32 +288,4 @@ public class mxsdkwrapper extends CordovaPlugin {
         }
     }
 
-    /**
-     * MD5 algorithm for plain text
-     *
-     * @param plainText input string
-     * @return plainText after md5
-     */
-    private String markMd5(String plainText) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(plainText.getBytes());
-            byte b[] = md.digest();
-            int i;
-            StringBuffer buf = new StringBuffer("");
-            for (int offset = 0; offset < b.length; offset++) {
-                i = b[offset];
-                if (i < 0)
-                    i += 256;
-                if (i < 16)
-                    buf.append("0");
-                buf.append(Integer.toHexString(i));
-            }
-            return buf.toString();
-
-        } catch (NoSuchAlgorithmException e) {
-            Log.e(TAG, e.getMessage());
-        }
-        return null;
-    }
 }
