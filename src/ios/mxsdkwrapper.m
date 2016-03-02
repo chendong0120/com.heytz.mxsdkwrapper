@@ -4,6 +4,7 @@
 #import "EASYLINK.h"
 #import "NSString+MD5.h"
 #import "AFNetworking.h"
+#import "FastSocket.h"
 
 @interface mxsdkwrapper : CDVPlugin <EasyLinkFTCDelegate> {
     // Member variables go here.
@@ -13,12 +14,15 @@
     CDVInvokedUrlCommand * commandHolder;
     NSString *deviceIp ;
     NSString *userToken ;
-    int acitvateTimeout;
-    NSString* activatePort;
-    NSString* device_id;
-    //
-    NSString* deviceLoginId;
-    NSString* devicePass;
+    NSString *APPId ;
+    NSString *productKey ;
+    NSString *token ;
+    NSString *activatePort;
+    NSString *device_id;
+    NSString *mac ;
+    NSString *deviceLoginId;
+    NSString *devicePass;
+    FastSocket *socket;
 
 
 
@@ -47,8 +51,7 @@
     deviceLoginId = [command.arguments objectAtIndex:6];
     devicePass = [command.arguments objectAtIndex:7];
     
-    if (wifiSSID == nil || wifiSSID.length == 0 || wifiKey == nil || wifiKey.length == 0 || uid == nil || uid.length == 0 || activatePort==nil || activatePort.length == 0 || deviceLoginId == nil || deviceLoginId.length == 0
-        || devicePass == nil || devicePass.length==0) {
+    if (wifiSSID == nil || wifiSSID.length == 0 || wifiKey == nil || wifiKey.length == 0 || uid == nil || uid.length == 0 ) {
         NSLog(@"Error: arguments");
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -71,10 +74,16 @@
     
 }
 
-- (void)setDeviceWifi:(CDVInvokedUrlCommand*)command
+- (void)sendDidVerification:(CDVInvokedUrlCommand*)command
 {
+     NSString* did = [command.arguments objectAtIndex:0];
     commandHolder = command;
-    sendDidVerification
+    NSString *para=[[@"{\"device_id\":\"" stringByAppendingString:did]stringByAppendingString:@"\"}"];
+    NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
+    long count = [socket sendBytes:[data bytes] count:[data length]];
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"OK"];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
+    
 }
 
 - (void) onDisconnectFromFTC:(NSNumber *)client
@@ -83,59 +92,41 @@
         if (deviceIp!=nil) {
             if (deviceIp!=nil) {
                 NSString * requestUrl =[[NSString alloc] init];
-                requestUrl = [[[[[requestUrl stringByAppendingString:@"http://"] stringByAppendingString:deviceIp]
-                                 stringByAppendingString:@":"]
-                                stringByAppendingString:"8000"]
-                               stringByAppendingString:@"/"];
-
+//                requestUrl = [[[[[requestUrl stringByAppendingString:@"http://"] stringByAppendingString:deviceIp]
+//                                stringByAppendingString:@":"]
+//                                stringByAppendingString:@"8000"]
+//                               stringByAppendingString:@"/"];
+                requestUrl = [requestUrl stringByAppendingString:deviceIp];
                 NSDictionary *parameters = @{@"app_id":APPId,@"product_key":productKey,@"user_token":token,@"uid":uid};
                 
-                sleep(1000);
+                NSString *para=[[[[[[[[@"{\"app_id\":\"" stringByAppendingString:APPId] stringByAppendingString:@"\",\"product_key\":\""]stringByAppendingString:productKey]stringByAppendingString:@"\",\"user_token\":\""]stringByAppendingString:token] stringByAppendingString:@"\",\"uid\":\""]stringByAppendingString:uid]stringByAppendingString:@"\"}"];
                 
-                AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+                sleep(1);
                 
-                NSURLRequest *request = [[AFJSONRequestSerializer serializer] requestWithMethod:@"POST" URLString:requestUrl parameters:parameters error:nil];
-                AFHTTPRequestOperation *op = [[AFHTTPRequestOperation alloc] initWithRequest:request];
-                op.responseSerializer = [AFJSONResponseSerializer serializer];
+                socket= [[FastSocket alloc] initWithHost:requestUrl andPort:@"8000"];
+                [socket connect];
                 
-                [op setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
-                    NSLog(@"JSON: %@", responseObject);
-                    NSDictionary *ret = [NSDictionary dictionaryWithObjectsAndKeys:
-                                         device_id,@"device_id",
-                                         mac, @"mac",
-                                         nil];
-                    
-                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
-                    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-                    
-                } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-                    NSLog(@"Error: %@", error);
+                NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
+                long count = [socket sendBytes:[data bytes] count:[data length]];
+                
+                char bytes[54];
+                [socket receiveBytes:bytes count:54];
+                NSString *received = [[NSString alloc] initWithBytes:bytes length:54 encoding:NSUTF8StringEncoding];
+                
+                NSData *jsonData = [received dataUsingEncoding:NSUTF8StringEncoding];
+                NSError *err;
+                NSDictionary *ret = [NSJSONSerialization JSONObjectWithData:jsonData
+                                                                    options:NSJSONReadingMutableContainers
+                                                                      error:&err];
+                if(err) {
+                    NSLog(@"json解析失败：%@",err);
                     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
                     [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-                    
-                }];
+                }else{
+                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
+                }
                 
-                [manager.operationQueue addOperation:op];
-                
-                NSOperationQueue *operationQueue = manager.operationQueue;
-                manager.reachabilityManager = [AFNetworkReachabilityManager managerForDomain:requestUrl];
-                [manager.reachabilityManager setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
-                    switch (status) {
-                        case AFNetworkReachabilityStatusReachableViaWWAN:
-                            [operationQueue setSuspended:YES];
-                            break;
-                        case AFNetworkReachabilityStatusReachableViaWiFi:
-                            [operationQueue setSuspended:NO];
-                            break;
-                        case AFNetworkReachabilityStatusNotReachable:
-                            [operationQueue setSuspended:YES];
-                            break;
-                        default:
-                            [operationQueue setSuspended:YES];
-                            break;
-                    }
-                }];
-                [manager.reachabilityManager startMonitoring];
             }
         } else {
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
@@ -164,8 +155,8 @@
         
         NSString * bssidPrefix = @"C89346";
         NSString * deviceNameSplit = [deviceName componentsSeparatedByString:@"("][1];
-        bssid = [bssidPrefix stringByAppendingString:[deviceNameSplit componentsSeparatedByString:@")"][0]];
-        NSLog(@"bssid:%@", bssid);
+//        bssid = [bssidPrefix stringByAppendingString:[deviceNameSplit componentsSeparatedByString:@")"][0]];
+//        NSLog(@"bssid:%@", bssid);
         deviceIp = [[[configDict objectForKey:@"C"][1] objectForKey:@"C"][3] objectForKey:@"C"];
         NSLog(@"device ip: %@", deviceIp);
     }

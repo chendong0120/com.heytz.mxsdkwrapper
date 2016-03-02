@@ -15,8 +15,6 @@
         <framework src="SystemConfiguration.framework"/>
         <framework src="CFNetwork.framework"/>
 
-        <source-file src="src/ios/NSString+MD5.h"/>
-        <source-file src="src/ios/NSString+MD5.m"/>
         <source-file src="src/ios/mxsdkwrapper.m"/>
 
         <!--CocoaAsyncSocket v7.3.3-->
