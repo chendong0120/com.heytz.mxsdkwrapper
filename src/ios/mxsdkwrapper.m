@@ -2,7 +2,6 @@
 #import <Foundation/Foundation.h>
 #import <Cordova/CDV.h>
 #import "EASYLINK.h"
-#import "NSString+MD5.h"
 #import "AFNetworking.h"
 #import "FastSocket.h"
 
