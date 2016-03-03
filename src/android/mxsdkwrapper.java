@@ -16,6 +16,7 @@ import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.Exception;
 import java.net.Socket;
 
 /**
@@ -91,9 +92,12 @@ public class mxsdkwrapper extends CordovaPlugin {
             return true;
         }
         if (action.equals("dealloc")) {
-            snifferSmartLinker.setOnSmartLinkListener(null);
-            snifferSmartLinker.stop();
-            mIsConnecting = false;
+            final EasyLinkAPI elapi = new EasyLinkAPI(context);
+            try {
+                elapi.stopEasyLink();
+            } catch (Exception e) {
+                Log.e(TAG, e.getMessage());
+            }
             return true;
         }
         return false;
@@ -242,8 +246,6 @@ public class mxsdkwrapper extends CordovaPlugin {
             easyLinkCallbackContext.error("args error");
         }
     }
-
-
 
 
     private void sendDidVerification(String did) {
