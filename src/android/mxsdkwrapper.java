@@ -150,7 +150,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                                 public void run() {
                                     boolean isReady = false;
                                     int timeoutValue = 30;
-                                    while (!isReady || !(timeoutValue == 0)) {
+                                    while (!isReady && !(timeoutValue == 0)) {
                                         try {
                                             Thread.sleep(1000L);
                                             timeoutValue--;
