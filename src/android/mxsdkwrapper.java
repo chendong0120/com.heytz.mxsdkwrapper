@@ -90,6 +90,12 @@ public class mxsdkwrapper extends CordovaPlugin {
             sendDidVerification(did);
             return true;
         }
+        if (action.equals("dealloc")) {
+            snifferSmartLinker.setOnSmartLinkListener(null);
+            snifferSmartLinker.stop();
+            mIsConnecting = false;
+            return true;
+        }
         return false;
     }
 

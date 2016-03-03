@@ -28,6 +28,7 @@
 }
 - (void)setDeviceWifi:(CDVInvokedUrlCommand*)command;
 - (void)sendDidVerification:(CDVInvokedUrlCommand*)command;
+- (void)dealloc:(CDVInvokedUrlCommand*)command;
 @end
 
 @implementation mxsdkwrapper
@@ -172,9 +173,12 @@
     }
 }
 
-- (void)dealloc
+- (void)dealloc:(CDVInvokedUrlCommand*)command
 {
     NSLog(@"//====dealloc...====");
+    if (easylink_config !=nil) {
+        [easylink_config stopTransmitting];
+    }
     easylink_config.delegate = nil;
     easylink_config = nil;
 }

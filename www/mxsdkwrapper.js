@@ -28,4 +28,8 @@ exports.sendDidVerification = function (did,
             did
         ]);
 };
+exports.dealloc = function () {
+    exec( "mxsdkwrapper", "sendDidVerification",
+        []);
+};
 
