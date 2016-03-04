@@ -29,7 +29,7 @@ exports.sendDidVerification = function (did,
         ]);
 };
 exports.dealloc = function () {
-    exec( "mxsdkwrapper", "dealloc",
+    exec( null,null,"mxsdkwrapper", "dealloc",
         []);
 };
 
