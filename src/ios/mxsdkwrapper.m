@@ -22,7 +22,9 @@
     NSString *deviceLoginId;
     NSString *devicePass;
     FastSocket *socket;
-
+    NSThread *threadTCP;
+    NSString *para;
+    NSString * requestUrl;
 
 
 }
@@ -91,41 +93,22 @@
     @try {
         if (deviceIp!=nil) {
             if (deviceIp!=nil) {
-                NSString * requestUrl =[[NSString alloc] init];
+                requestUrl =[[NSString alloc] init];
 //                requestUrl = [[[[[requestUrl stringByAppendingString:@"http://"] stringByAppendingString:deviceIp]
 //                                stringByAppendingString:@":"]
 //                                stringByAppendingString:@"8000"]
 //                               stringByAppendingString:@"/"];
                 requestUrl = [requestUrl stringByAppendingString:deviceIp];
-                NSDictionary *parameters = @{@"app_id":APPId,@"product_key":productKey,@"user_token":token,@"uid":uid};
                 
-                NSString *para=[[[[[[[[@"{\"app_id\":\"" stringByAppendingString:APPId] stringByAppendingString:@"\",\"product_key\":\""]stringByAppendingString:productKey]stringByAppendingString:@"\",\"user_token\":\""]stringByAppendingString:token] stringByAppendingString:@"\",\"uid\":\""]stringByAppendingString:uid]stringByAppendingString:@"\"}"];
+                para=[[[[[[[[@"{\"app_id\":\"" stringByAppendingString:APPId] stringByAppendingString:@"\",\"product_key\":\""]stringByAppendingString:productKey]stringByAppendingString:@"\",\"user_token\":\""]stringByAppendingString:token] stringByAppendingString:@"\",\"uid\":\""]stringByAppendingString:uid]stringByAppendingString:@"\"}"];
                 
                 sleep(1);
                 
-                socket= [[FastSocket alloc] initWithHost:requestUrl andPort:@"8000"];
-                [socket connect];
+                threadTCP = [[NSThread alloc] initWithTarget:self selector:@selector(run) object:nil];
+                [threadTCP setName:@"threadTCP"];
+                [threadTCP start];
                 
-                NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
-                long count = [socket sendBytes:[data bytes] count:[data length]];
                 
-                char bytes[54];
-                [socket receiveBytes:bytes count:54];
-                NSString *received = [[NSString alloc] initWithBytes:bytes length:54 encoding:NSUTF8StringEncoding];
-                
-                NSData *jsonData = [received dataUsingEncoding:NSUTF8StringEncoding];
-                NSError *err;
-                NSDictionary *ret = [NSJSONSerialization JSONObjectWithData:jsonData
-                                                                    options:NSJSONReadingMutableContainers
-                                                                      error:&err];
-                if(err) {
-                    NSLog(@"json解析失败：%@",err);
-                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-                    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-                }else{
-                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
-                    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-                }
                 
             }
         } else {
@@ -143,7 +126,32 @@
     
     
 }
-
+- (void)run{
+    socket= [[FastSocket alloc] initWithHost:requestUrl andPort:@"8000"];
+    [socket setTimeout:20];
+    [socket connect];
+    
+    NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
+    long count = [socket sendBytes:[data bytes] count:[data length]];
+    
+    char bytes[54];
+    [socket receiveBytes:bytes count:54];
+    NSString *received = [[NSString alloc] initWithBytes:bytes length:54 encoding:NSUTF8StringEncoding];
+    
+    NSData *jsonData = [received dataUsingEncoding:NSUTF8StringEncoding];
+    NSError *err;
+    NSDictionary *ret = [NSJSONSerialization JSONObjectWithData:jsonData
+                                                        options:NSJSONReadingMutableContainers
+                                                          error:&err];
+    if(err) {
+        NSLog(@"json解析失败：%@",err);
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
+    }else{
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
+    }
+}
 
 - (void)onFoundByFTC:(NSNumber *)ftcClientTag withConfiguration: (NSDictionary *)configDict;
 {
@@ -179,8 +187,8 @@
     if (easylink_config !=nil) {
         [easylink_config stopTransmitting];
     }
-    easylink_config.delegate = nil;
-    easylink_config = nil;
+//    easylink_config.delegate = nil;
+//    easylink_config = nil;
 }
 
 @end
