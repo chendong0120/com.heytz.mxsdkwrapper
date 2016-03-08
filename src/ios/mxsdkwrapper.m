@@ -25,8 +25,8 @@
     NSThread *threadTCP;
     NSString *para;
     NSString * requestUrl;
-
-
+    
+    
 }
 - (void)setDeviceWifi:(CDVInvokedUrlCommand*)command;
 - (void)sendDidVerification:(CDVInvokedUrlCommand*)command;
@@ -78,7 +78,7 @@
 
 - (void)sendDidVerification:(CDVInvokedUrlCommand*)command
 {
-     NSString* did = [command.arguments objectAtIndex:0];
+    NSString* did = [command.arguments objectAtIndex:0];
     commandHolder = command;
     NSString *para=[[@"{\"device_id\":\"" stringByAppendingString:did]stringByAppendingString:@"\"}"];
     NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
@@ -92,25 +92,54 @@
 {
     @try {
         if (deviceIp!=nil) {
-            if (deviceIp!=nil) {
+            [self.commandDelegate runInBackground:^{
                 requestUrl =[[NSString alloc] init];
-//                requestUrl = [[[[[requestUrl stringByAppendingString:@"http://"] stringByAppendingString:deviceIp]
-//                                stringByAppendingString:@":"]
-//                                stringByAppendingString:@"8000"]
-//                               stringByAppendingString:@"/"];
+                //                requestUrl = [[[[[requestUrl stringByAppendingString:@"http://"] stringByAppendingString:deviceIp]
+                //                                stringByAppendingString:@":"]
+                //                                stringByAppendingString:@"8000"]
+                //                               stringByAppendingString:@"/"];
                 requestUrl = [requestUrl stringByAppendingString:deviceIp];
                 
                 para=[[[[[[[[@"{\"app_id\":\"" stringByAppendingString:APPId] stringByAppendingString:@"\",\"product_key\":\""]stringByAppendingString:productKey]stringByAppendingString:@"\",\"user_token\":\""]stringByAppendingString:token] stringByAppendingString:@"\",\"uid\":\""]stringByAppendingString:uid]stringByAppendingString:@"\"}"];
                 
                 sleep(1);
                 
-                threadTCP = [[NSThread alloc] initWithTarget:self selector:@selector(run) object:nil];
-                [threadTCP setName:@"threadTCP"];
-                [threadTCP start];
+                NSDictionary *ret;
+                int resultFlag=0;
+                
+                socket= [[FastSocket alloc] initWithHost:requestUrl andPort:@"8000"];
+                [socket setTimeout:20];
+                [socket connect];
+                
+                NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
+                long count = [socket sendBytes:[data bytes] count:[data length]];
+                
+                char bytes[54];
+                [socket receiveBytes:bytes count:54];
+                NSString *received = [[NSString alloc] initWithBytes:bytes length:54 encoding:NSUTF8StringEncoding];
+                
+                NSData *jsonData = [received dataUsingEncoding:NSUTF8StringEncoding];
+                NSError *err;
+                
+                
+                if(received!=nil){
+                    ret = [NSJSONSerialization JSONObjectWithData:jsonData
+                                                          options:NSJSONReadingMutableContainers
+                                                            error:&err];
+                    resultFlag = 1;
+                }
                 
                 
                 
-            }
+                if(resultFlag==1){
+                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
+                }else{
+                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
+                }
+                
+            }];
         } else {
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
@@ -126,45 +155,20 @@
     
     
 }
-- (void)run{
-    socket= [[FastSocket alloc] initWithHost:requestUrl andPort:@"8000"];
-    [socket setTimeout:20];
-    [socket connect];
-    
-    NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
-    long count = [socket sendBytes:[data bytes] count:[data length]];
-    
-    char bytes[54];
-    [socket receiveBytes:bytes count:54];
-    NSString *received = [[NSString alloc] initWithBytes:bytes length:54 encoding:NSUTF8StringEncoding];
-    
-    NSData *jsonData = [received dataUsingEncoding:NSUTF8StringEncoding];
-    NSError *err;
-    NSDictionary *ret = [NSJSONSerialization JSONObjectWithData:jsonData
-                                                        options:NSJSONReadingMutableContainers
-                                                          error:&err];
-    if(err) {
-        NSLog(@"json解析失败：%@",err);
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-    }else{
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-    }
-}
+
 
 - (void)onFoundByFTC:(NSNumber *)ftcClientTag withConfiguration: (NSDictionary *)configDict;
 {
     @try{
         [easylink_config configFTCClient:ftcClientTag withConfiguration:configDict];
         NSString *deviceName = [configDict objectForKey:@"N"];
-       
+        
         NSLog(@"device name: %@", deviceName);
         
         NSString * bssidPrefix = @"C89346";
         NSString * deviceNameSplit = [deviceName componentsSeparatedByString:@"("][1];
-//        bssid = [bssidPrefix stringByAppendingString:[deviceNameSplit componentsSeparatedByString:@")"][0]];
-//        NSLog(@"bssid:%@", bssid);
+        //        bssid = [bssidPrefix stringByAppendingString:[deviceNameSplit componentsSeparatedByString:@")"][0]];
+        //        NSLog(@"bssid:%@", bssid);
         deviceIp = [[[configDict objectForKey:@"C"][1] objectForKey:@"C"][3] objectForKey:@"C"];
         NSLog(@"device ip: %@", deviceIp);
     }
@@ -187,8 +191,12 @@
     if (easylink_config !=nil) {
         [easylink_config stopTransmitting];
     }
-//    easylink_config.delegate = nil;
-//    easylink_config = nil;
+    if(socket!=nil)
+    {
+        [socket close];
+    }
+    //    easylink_config.delegate = nil;
+    //    easylink_config = nil;
 }
 
 @end
