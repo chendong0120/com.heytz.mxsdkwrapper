@@ -58,12 +58,6 @@ public class mxsdkwrapper extends CordovaPlugin {
         if (action.equals("setDeviceWifi")) {
             String wifiSSID = args.getString(0);
             String wifiKey = args.getString(1);
-            userName = args.getString(2);
-            //easylinkVersion = args.getInt(3);
-            activateTimeout = args.getInt(4);
-            activatePort = args.getString(5);
-            deviceLoginID = args.getString(6);
-            devicePassword = args.getString(7);
 
             if (wifiSSID == null || wifiSSID.length() == 0 ||
                     wifiKey == null || wifiKey.length() == 0 ||
@@ -76,11 +70,17 @@ public class mxsdkwrapper extends CordovaPlugin {
                 return false;
             }
 
-            // todo: replace with EasylinkAPI
-            //ftcService = new FTC_Service();
             easyLinkCallbackContext = callbackContext;
-            //ftcListener = new FTCLisenerExtension(callbackContext);
             this.transmitSettings(wifiSSID, wifiKey);
+            return true;
+        }
+        if (action.equals("dealloc")) {
+            final EasyLinkAPI elapi = new EasyLinkAPI(context);
+            try {
+                elapi.stopEasyLink();
+            } catch (Exception e) {
+                Log.e(TAG, e.getMessage());
+            }
             return true;
         }
         return false;
@@ -94,8 +94,6 @@ public class mxsdkwrapper extends CordovaPlugin {
      */
     private void transmitSettings(String wifiSSID, String wifiKey) {
         Log.i(TAG, " Step1. Call FTC Service to transmit settings. SSID = " + wifiSSID + ", Password = " + wifiKey);
-        int mobileIp = getMobileIP();
-        Log.i(TAG, String.valueOf(mobileIp));
         if (wifiSSID != null && wifiSSID.length() > 0 && wifiKey != null && wifiKey.length() > 0 && mobileIp != 0) {
             final EasyLinkAPI elapi = new EasyLinkAPI(context);
             elapi.startFTC(wifiSSID, wifiKey, new FTCListener() {
@@ -119,70 +117,8 @@ public class mxsdkwrapper extends CordovaPlugin {
                                     deviceName.indexOf("(") + 1,
                                     deviceName.length() - 1);
 
-                            //Call Step 2.2
-                            //setDevicePwd(socket, deviceLoginID);
-                            final String activeToken = markMd5(deviceMac + userName + devicePassword);
-                            //Call Step 3,4,5.
-                            Log.d(TAG, String.valueOf(activateTimeout));
+                            easyLinkCallbackContext.success(deviceMac);
 
-                            // we need to check the module port has started yet,
-                            // may cause the problem that it is always running
-                            // to fix it, introduce a timeoutValue to 240 seconds
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    boolean isReady = false;
-                                    int timeoutValue = activateTimeout;
-                                    while (!isReady || !(timeoutValue == 0)) {
-                                        Socket client;
-                                        try {
-                                            Thread.sleep(1000L);
-                                            timeoutValue--;
-                                        } catch (InterruptedException e) {
-                                            Log.e(TAG, e.getMessage());
-                                        }
-
-                                        try {
-
-                                            client = new Socket(deviceIP, Integer.parseInt(activatePort));
-                                            client.close();
-                                            client = null;
-                                            isReady = true;
-                                        } catch (Exception e) {
-                                            Log.e(TAG, e.getMessage());
-                                            try {
-                                                Thread.sleep(3 * 1000L);
-                                                timeoutValue = timeoutValue - 3;
-                                            } catch (InterruptedException e1) {
-
-                                                Log.e(TAG, e1.getMessage());
-
-                                            }
-                                        }
-                                    }
-
-                                    if (isReady) {
-                                        HttpPostData(deviceIP, activeToken);
-                                        String stringResult = "{\"active_token\": \"" + activeToken + "\", \"mac\": \"" + deviceMac + "\"}";
-                                        Log.i(TAG, stringResult);
-                                        JSONObject activeJSON = null;
-                                        try {
-                                            activeJSON = new JSONObject(stringResult);
-                                        } catch (JSONException e) {
-                                            Log.e(TAG, e.getMessage());
-                                        }
-                                        easyLinkCallbackContext.success(activeJSON);
-                                    } else {
-                                        Log.e(TAG, "activate failed");
-                                        easyLinkCallbackContext.error("JSON obj error");
-                                    }
-                                }
-                            }).start();
-
-
-                            //Call Step 6. - pls. DO NOT REMOVE
-                            //Authorize(activeToken);
-                            //easyLinkCallbackContext.success("{\"ip\": \"" + deviceIP + ", \"user_token\": \"" + activeToken + "\"}");
                         } catch (JSONException e) {
                             Log.e(TAG, e.getMessage());
                             easyLinkCallbackContext.error("parse JSON obj error");
@@ -203,94 +139,4 @@ public class mxsdkwrapper extends CordovaPlugin {
     }
 
 
-    /**
-     * Step 3,4,5. Send activate request to module,
-     * module sends the request to MXChip cloud and then get back device id and return to app.
-     *
-     * @param activateDeviceIP    device ip need to-be activated
-     * @param activateDeviceToken device token need to-be activated
-     */
-    private void HttpPostData(String activateDeviceIP, String activateDeviceToken) {
-        Log.i(TAG, " Step 3. Send activate request to MXChip model.");
-
-        try {
-            HttpClient httpclient = new DefaultHttpClient();
-            String ACTIVATE_PORT = activatePort;//"8000";
-            String ACTIVATE_URL = "/dev-activate";
-            String urlString = "http://" + activateDeviceIP + ":" + ACTIVATE_PORT
-                    + ACTIVATE_URL;
-            Log.i(TAG, "urlString:" + urlString);
-            HttpPost httppost = new HttpPost(urlString);
-            httppost.addHeader("Content-Type", "application/json");
-            httppost.addHeader("Cache-Control", "no-cache");
-            JSONObject obj = new JSONObject();
-            obj.put("login_id", deviceLoginID);
-            obj.put("dev_passwd", devicePassword);
-            obj.put("user_token", activateDeviceToken);
-            Log.i(TAG, "" + obj.toString());
-            httppost.setEntity(new StringEntity(obj.toString()));
-            HttpResponse response;
-            response = httpclient.execute(httppost);
-            int respCode = response.getStatusLine().getStatusCode();
-            Log.i(TAG, "respCode:" + respCode);
-            String responsesString = EntityUtils.toString(response.getEntity());
-            Log.i(TAG, "responsesString:" + responsesString);
-            if (respCode == HttpURLConnection.HTTP_OK) {
-                JSONObject jsonObject = new JSONObject(responsesString);
-                //Get device ID and save in class variable.
-                String deviceID = jsonObject.getString("device_id");
-                Log.i(TAG, "deviceID:" + deviceID);
-
-            } else {
-                easyLinkCallbackContext.error("Device activate failed.");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }
-    }
-
-
-    /**
-     * @return 0 if we don't get the mobile device ip, else the mobile device ip
-     */
-    private int getMobileIP() {
-        try {
-            WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-            return wifiInfo.getIpAddress();
-
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-            return 0;
-        }
-    }
-
-    /**
-     * MD5 algorithm for plain text
-     *
-     * @param plainText input string
-     * @return plainText after md5
-     */
-    private String markMd5(String plainText) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(plainText.getBytes());
-            byte b[] = md.digest();
-            int i;
-            StringBuffer buf = new StringBuffer("");
-            for (int offset = 0; offset < b.length; offset++) {
-                i = b[offset];
-                if (i < 0)
-                    i += 256;
-                if (i < 16)
-                    buf.append("0");
-                buf.append(Integer.toHexString(i));
-            }
-            return buf.toString();
-
-        } catch (NoSuchAlgorithmException e) {
-            Log.e(TAG, e.getMessage());
-        }
-        return null;
-    }
 }
