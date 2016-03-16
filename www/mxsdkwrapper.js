@@ -6,9 +6,7 @@ exports.setDeviceWifi = function (wifiSSID,
     exec(success, error, "mxsdkwrapper", "setDeviceWifi",
         [
             wifiSSID,
-            wifiKey,
-            moduleDefaultUser,
-            moduleDefaultPass
+            wifiKey
         ]);
 };
 exports.dealloc = function () {
