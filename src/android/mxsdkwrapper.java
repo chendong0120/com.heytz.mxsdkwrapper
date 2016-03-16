@@ -59,9 +59,7 @@ public class mxsdkwrapper extends CordovaPlugin {
             String wifiSSID = args.getString(0);
             String wifiKey = args.getString(1);
 
-            if (wifiSSID == null || wifiSSID.length() == 0 ||
-                    wifiKey == null || wifiKey.length() == 0 ||
-                    ) {
+            if (wifiSSID == null || wifiSSID.length() == 0 || wifiKey == null || wifiKey.length() == 0) {
                 Log.e(TAG, "arguments error ===== empty");
                 return false;
             }
