@@ -61,10 +61,6 @@ public class mxsdkwrapper extends CordovaPlugin {
 
             if (wifiSSID == null || wifiSSID.length() == 0 ||
                     wifiKey == null || wifiKey.length() == 0 ||
-                    userName == null || userName.length() == 0 ||
-                    activatePort == null || activatePort.length() == 0 ||
-                    devicePassword == null || devicePassword.length() == 0 ||
-                    deviceLoginID == null || deviceLoginID.length() == 0
                     ) {
                 Log.e(TAG, "arguments error ===== empty");
                 return false;
