@@ -72,6 +72,7 @@ public class mxsdkwrapper extends CordovaPlugin {
             final EasyLinkAPI elapi = new EasyLinkAPI(context);
             try {
                 elapi.stopEasyLink();
+                elapi.stopFTC();
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }
@@ -95,6 +96,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                 public void onFTCfinished(String ip,
                                           String data) {
                     elapi.stopEasyLink();
+                    elapi.stopFTC();
 
                     if (!"".equals(data)) {
                         JSONObject jsonObj;
