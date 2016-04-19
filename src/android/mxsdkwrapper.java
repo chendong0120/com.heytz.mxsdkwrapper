@@ -41,6 +41,7 @@ public class mxsdkwrapper extends CordovaPlugin {
     //  private int easylinkVersion;
     private int activateTimeout;
     private String activatePort;
+    private EasyLinkAPI elapi;
 
 
     /**
@@ -69,10 +70,9 @@ public class mxsdkwrapper extends CordovaPlugin {
             return true;
         }
         if (action.equals("dealloc")) {
-            final EasyLinkAPI elapi = new EasyLinkAPI(context);
+//            final EasyLinkAPI elapi = new EasyLinkAPI(context);
             try {
-                elapi.stopEasyLink();
-                elapi.stopFTC();
+                stop();
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }
@@ -90,13 +90,13 @@ public class mxsdkwrapper extends CordovaPlugin {
     private void transmitSettings(String wifiSSID, String wifiKey) {
         Log.i(TAG, " Step1. Call FTC Service to transmit settings. SSID = " + wifiSSID + ", Password = " + wifiKey);
         if (wifiSSID != null && wifiSSID.length() > 0 && wifiKey != null && wifiKey.length() > 0) {
-            final EasyLinkAPI elapi = new EasyLinkAPI(context);
+//            final EasyLinkAPI elapi = new EasyLinkAPI(context);
+            resetEasyLink();
             elapi.startFTC(wifiSSID, wifiKey, new FTCListener() {
                 @Override
                 public void onFTCfinished(String ip,
                                           String data) {
                     elapi.stopEasyLink();
-                    elapi.stopFTC();
 
                     if (!"".equals(data)) {
                         JSONObject jsonObj;
@@ -115,6 +115,7 @@ public class mxsdkwrapper extends CordovaPlugin {
 
                             easyLinkCallbackContext.success(deviceMac);
 
+
                         } catch (JSONException e) {
                             Log.e(TAG, e.getMessage());
                             easyLinkCallbackContext.error("parse JSON obj error");
@@ -123,6 +124,8 @@ public class mxsdkwrapper extends CordovaPlugin {
                         Log.e(TAG, "socket data is empty!");
                         easyLinkCallbackContext.error("FTC socket data empty");
                     }
+                    elapi.stopFTC();
+
                 }
 
                 @Override
@@ -134,5 +137,17 @@ public class mxsdkwrapper extends CordovaPlugin {
         }
     }
 
+    private void stop() {
+        if (elapi != null) {
+            elapi.stopEasyLink();
+            elapi.stopFTC();
+            elapi = null;
+        }
+    }
+
+    private void resetEasyLink() {
+        stop();
+        elapi = new EasyLinkAPI(context);
+    }
 
 }
