@@ -124,7 +124,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                         Log.e(TAG, "socket data is empty!");
                         easyLinkCallbackContext.error("FTC socket data empty");
                     }
-                    elapi.stopFTC();
+                    //elapi.stopFTC();
 
                 }
 
