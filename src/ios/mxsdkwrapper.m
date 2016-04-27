@@ -46,7 +46,12 @@
     }
     NSString* wifiSSID = [command.arguments objectAtIndex:0];
     NSString* wifiKey = [command.arguments objectAtIndex:1];
-    if (wifiSSID == nil || wifiSSID.length == 0 || wifiKey == nil || wifiKey.length == 0 ) {
+    
+    if(wifiKey == nil || wifiKey.length == 0 ){
+        wifiKey = "";
+    }
+    
+    if (wifiSSID == nil || wifiSSID.length == 0 ) {
         NSLog(@"Error: arguments");
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];

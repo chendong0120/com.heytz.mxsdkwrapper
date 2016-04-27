@@ -60,7 +60,11 @@ public class mxsdkwrapper extends CordovaPlugin {
             String wifiSSID = args.getString(0);
             String wifiKey = args.getString(1);
 
-            if (wifiSSID == null || wifiSSID.length() == 0 || wifiKey == null || wifiKey.length() == 0) {
+            if(wifiKey == null || wifiKey.length() == 0){
+                wifiKey = "";
+            }
+            
+            if (wifiSSID == null || wifiSSID.length() == 0) {
                 Log.e(TAG, "arguments error ===== empty");
                 return false;
             }
@@ -70,7 +74,6 @@ public class mxsdkwrapper extends CordovaPlugin {
             return true;
         }
         if (action.equals("dealloc")) {
-//            final EasyLinkAPI elapi = new EasyLinkAPI(context);
             try {
                 stop();
             } catch (Exception e) {
@@ -89,8 +92,7 @@ public class mxsdkwrapper extends CordovaPlugin {
      */
     private void transmitSettings(String wifiSSID, String wifiKey) {
         Log.i(TAG, " Step1. Call FTC Service to transmit settings. SSID = " + wifiSSID + ", Password = " + wifiKey);
-        if (wifiSSID != null && wifiSSID.length() > 0 && wifiKey != null && wifiKey.length() > 0) {
-//            final EasyLinkAPI elapi = new EasyLinkAPI(context);
+        if (wifiSSID != null && wifiSSID.length() > 0) {
             resetEasyLink();
             elapi.startFTC(wifiSSID, wifiKey, new FTCListener() {
                 @Override
