@@ -53,7 +53,7 @@
     }
 
     if( wifiKey == nil || wifiKey.length == 0 ){
-        wifiKey="";
+        wifiKey=@"";
     }
 
     if (wifiSSID == nil || wifiSSID.length == 0 || loginID == nil || loginID.length == 0 || activatePort==nil || activatePort.length == 0 || deviceLoginId == nil || deviceLoginId.length == 0
