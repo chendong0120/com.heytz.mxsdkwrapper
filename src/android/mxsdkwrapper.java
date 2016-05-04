@@ -64,9 +64,10 @@ public class mxsdkwrapper extends CordovaPlugin {
             activatePort = args.getString(5);
             deviceLoginID = args.getString(6);
             devicePassword = args.getString(7);
-
+            if (wifiKey == null || wifiKey.length() == 0)
+                wifiKey = "";
             if (wifiSSID == null || wifiSSID.length() == 0 ||
-                    wifiKey == null || wifiKey.length() == 0 ||
+//                    wifiKey == null || wifiKey.length() == 0 ||
                     userName == null || userName.length() == 0 ||
                     activatePort == null || activatePort.length() == 0 ||
                     devicePassword == null || devicePassword.length() == 0 ||
@@ -96,7 +97,7 @@ public class mxsdkwrapper extends CordovaPlugin {
         Log.i(TAG, " Step1. Call FTC Service to transmit settings. SSID = " + wifiSSID + ", Password = " + wifiKey);
         int mobileIp = getMobileIP();
         Log.i(TAG, String.valueOf(mobileIp));
-        if (wifiSSID != null && wifiSSID.length() > 0 && wifiKey != null && wifiKey.length() > 0 && mobileIp != 0) {
+        if (wifiSSID != null && wifiSSID.length() > 0 && mobileIp != 0) {
             final EasyLinkAPI elapi = new EasyLinkAPI(context);
             elapi.startFTC(wifiSSID, wifiKey, new FTCListener() {
                 @Override
