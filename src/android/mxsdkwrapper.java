@@ -113,7 +113,7 @@ public class mxsdkwrapper extends CordovaPlugin {
                                     deviceName.indexOf("(") + 1,
                                     deviceName.length() - 1);
 
-                            easyLinkCallbackContext.success(deviceMac);
+                            easyLinkCallbackContext.success("{\"ip\":\"" + deviceIP + "\",\"mac:\"" + deviceMac + "\"}");
 
 
                         } catch (JSONException e) {

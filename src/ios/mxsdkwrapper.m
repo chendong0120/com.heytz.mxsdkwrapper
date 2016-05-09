@@ -95,7 +95,11 @@
         NSString * bssidPrefix = @"C89346";
         NSString * deviceNameSplit = [deviceName componentsSeparatedByString:@"("][1];
         CDVPluginResult *pluginResult = nil;
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        NSDictionary *ret = [NSDictionary dictionaryWithObjectsAndKeys:
+                            mac, @"mac",
+                            ip, @"deviceIp",
+                            nil];
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
 
     }
