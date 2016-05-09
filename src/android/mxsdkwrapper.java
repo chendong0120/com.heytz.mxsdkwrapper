@@ -112,8 +112,13 @@ public class mxsdkwrapper extends CordovaPlugin {
                                     + deviceName.substring(
                                     deviceName.indexOf("(") + 1,
                                     deviceName.length() - 1);
+                            JSONObject result = new JSONObject();
+                            result.put("name",deviceName);
+                            result.put("ip",deviceIP);
+                            result.put("mac",deviceMac);
 
-                            easyLinkCallbackContext.success(deviceMac);
+                            easyLinkCallbackContext.success(result);
+                            //easyLinkCallbackContext.success("{\"ip\":\"" + deviceIP + "\",\"mac\":\"" + deviceMac + "\"}");
 
 
                         } catch (JSONException e) {
