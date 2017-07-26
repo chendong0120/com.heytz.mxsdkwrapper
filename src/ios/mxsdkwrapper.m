@@ -2,8 +2,8 @@
 #import <Foundation/Foundation.h>
 #import <Cordova/CDV.h>
 #import "EASYLINK.h"
-#import "AFNetworking.h"
-#import "FastSocket.h"
+//#import "AFNetworking.h"
+//#import "FastSocket.h"
 
 @interface mxsdkwrapper : CDVPlugin <EasyLinkFTCDelegate> {
     // Member variables go here.
@@ -21,15 +21,15 @@
     NSString *mac ;
     NSString *deviceLoginId;
     NSString *devicePass;
-    FastSocket *socket;
+//    FastSocket *socket;
     NSThread *threadTCP;
     NSString *para;
     NSString * requestUrl;
-    
-    
+
+
 }
 - (void)setDeviceWifi:(CDVInvokedUrlCommand*)command;
-- (void)sendDidVerification:(CDVInvokedUrlCommand*)command;
+//- (void)sendDidVerification:(CDVInvokedUrlCommand*)command;
 - (void)dealloc:(CDVInvokedUrlCommand*)command;
 @end
 
@@ -52,7 +52,7 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-    
+
     NSMutableDictionary *wlanConfig = [NSMutableDictionary dictionaryWithCapacity:20];
     [wlanConfig setObject:[wifiSSID dataUsingEncoding:NSUTF8StringEncoding] forKey:KEY_SSID];
     [wlanConfig setObject:wifiKey forKey:KEY_PASSWORD];
@@ -66,20 +66,20 @@
     [easylink_config prepareEasyLink_withFTC:wlanConfig info:nil mode:mode];
     [easylink_config transmitSettings];
     commandHolder = command;
-    
+
 }
 
-- (void)sendDidVerification:(CDVInvokedUrlCommand*)command
-{
-    NSString* did = [command.arguments objectAtIndex:0];
-    commandHolder = command;
-    NSString *para=[[@"{\"device_id\":\"" stringByAppendingString:did]stringByAppendingString:@"\"}"];
-    NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
-    long count = [socket sendBytes:[data bytes] count:[data length]];
-    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"OK"];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-    
-}
+//- (void)sendDidVerification:(CDVInvokedUrlCommand*)command
+//{
+//    NSString* did = [command.arguments objectAtIndex:0];
+//    commandHolder = command;
+//    NSString *para=[[@"{\"device_id\":\"" stringByAppendingString:did]stringByAppendingString:@"\"}"];
+//    NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
+//    long count = [socket sendBytes:[data bytes] count:[data length]];
+//    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"OK"];
+//    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
+//
+//}
 
 - (void) onDisconnectFromFTC:(NSNumber *)client{}
 
@@ -89,9 +89,9 @@
     @try{
         [easylink_config configFTCClient:ftcClientTag withConfiguration:configDict];
         NSString *deviceName = [configDict objectForKey:@"N"];
-        
+
         NSLog(@"device name: %@", deviceName);
-        
+
         NSString * bssidPrefix = @"C89346";
         NSString * deviceNameSplit = [deviceName componentsSeparatedByString:@"("][1];
         mac = [bssidPrefix stringByAppendingString:[deviceNameSplit componentsSeparatedByString:@")"][0]];
@@ -124,10 +124,10 @@
     if (easylink_config !=nil) {
         [easylink_config stopTransmitting];
     }
-    if(socket!=nil)
-    {
-        [socket close];
-    }
+//    if(socket!=nil)
+//    {
+//        [socket close];
+//    }
     //    easylink_config.delegate = nil;
     //    easylink_config = nil;
 }
