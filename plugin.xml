@@ -39,7 +39,6 @@
         <source-file src="libs/ios/EasyLink/EasyLinkForAXZWifiLink.m"/>
         <source-file src="libs/ios/EasyLink/MXCHIPAirlink.h"/>
         <source-file src="libs/ios/EasyLink/MXCHIPAirlink.m"/>
-        <source-file src="libs/ios/EasyLink/libEasyLink.a"/>
         <source-file framework="true" src="libs/ios/EasyLink/libEasyLink.a"/>
 
     </platform>
