@@ -2,30 +2,10 @@
 #import <Foundation/Foundation.h>
 #import <Cordova/CDV.h>
 #import "EASYLINK.h"
-//#import "AFNetworking.h"
-//#import "FastSocket.h"
+
 
 @interface mxsdkwrapper : CDVPlugin <EasyLinkFTCDelegate> {
-    // Member variables go here.
     EASYLINK *easylink_config;
-    NSMutableDictionary *deviceIPConfig;
-    NSString *uid;
-    CDVInvokedUrlCommand * commandHolder;
-    NSString *deviceIp ;
-    NSString *userToken ;
-    NSString *APPId ;
-    NSString *productKey ;
-    NSString *token ;
-    NSString *activatePort;
-    NSString *device_id;
-    NSString *mac ;
-    NSString *deviceLoginId;
-    NSString *devicePass;
-//    FastSocket *socket;
-    NSThread *threadTCP;
-    NSString *para;
-    NSString * requestUrl;
-
 
 }
 - (void)setDeviceWifi:(CDVInvokedUrlCommand*)command;
@@ -36,14 +16,10 @@
 @implementation mxsdkwrapper
 
 -(void)pluginInitialize{
-    easylink_config = nil;
 }
 
 - (void)setDeviceWifi:(CDVInvokedUrlCommand*)command
 {
-    if (easylink_config == nil || easylink_config.delegate == nil) {
-        easylink_config = [[EASYLINK alloc]initWithDelegate:self];
-    }
     NSString* wifiSSID = [command.arguments objectAtIndex:0];
     NSString* wifiKey = [command.arguments objectAtIndex:1];
     if (wifiSSID == nil || wifiSSID.length == 0 || wifiKey == nil || wifiKey.length == 0 ) {
@@ -52,84 +28,63 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
+     [self stopEasyLink ];
 
-    NSMutableDictionary *wlanConfig = [NSMutableDictionary dictionaryWithCapacity:20];
-    [wlanConfig setObject:[wifiSSID dataUsingEncoding:NSUTF8StringEncoding] forKey:KEY_SSID];
+    NSMutableDictionary *wlanConfig = [NSMutableDictionary dictionaryWithCapacity:5];
+
+    [wlanConfig setObject:wifiSSID forKey:KEY_SSID];
     [wlanConfig setObject:wifiKey forKey:KEY_PASSWORD];
-    //this should be always YES as currently only support DHCP mode
-    [wlanConfig setObject:[NSNumber numberWithBool:@YES] forKey:KEY_DHCP];
-    //use default value
-    EasyLinkMode mode = (EasyLinkMode)3;
-    if (!mode) {
-        mode = EASYLINK_V2_PLUS;
-    }
-    [easylink_config prepareEasyLink_withFTC:wlanConfig info:nil mode:mode];
+    [wlanConfig setObject:[NSNumber numberWithBool:YES] forKey:KEY_DHCP];
+
+    [easylink_config prepareEasyLink:wlanConfig
+                                info:nil
+                                mode:EASYLINK_V2_PLUS
+                             encrypt:[@"" dataUsingEncoding:NSUTF8StringEncoding] ];
     [easylink_config transmitSettings];
-    commandHolder = command;
-
-}
-
-//- (void)sendDidVerification:(CDVInvokedUrlCommand*)command
-//{
-//    NSString* did = [command.arguments objectAtIndex:0];
-//    commandHolder = command;
-//    NSString *para=[[@"{\"device_id\":\"" stringByAppendingString:did]stringByAppendingString:@"\"}"];
-//    NSData *data = [para dataUsingEncoding:NSUTF8StringEncoding];
-//    long count = [socket sendBytes:[data bytes] count:[data length]];
-//    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"OK"];
-//    [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-//
-//}
-
-- (void) onDisconnectFromFTC:(NSNumber *)client{}
 
 
-- (void)onFoundByFTC:(NSNumber *)ftcClientTag withConfiguration: (NSDictionary *)configDict;
-{
-    @try{
-        [easylink_config configFTCClient:ftcClientTag withConfiguration:configDict];
-        NSString *deviceName = [configDict objectForKey:@"N"];
-
-        NSLog(@"device name: %@", deviceName);
-
-        NSString * bssidPrefix = @"C89346";
-        NSString * deviceNameSplit = [deviceName componentsSeparatedByString:@"("][1];
-        mac = [bssidPrefix stringByAppendingString:[deviceNameSplit componentsSeparatedByString:@")"][0]];
-        deviceIp = [[[configDict objectForKey:@"C"][1] objectForKey:@"C"][3] objectForKey:@"C"];
-        CDVPluginResult *pluginResult = nil;
-        NSDictionary *ret = [NSDictionary dictionaryWithObjectsAndKeys:
-                            mac, @"mac",
-                            deviceIp, @"ip",
-                            nil];
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-
-    }
-    @catch (NSException *e){
-        NSLog(@"error - save configuration..." );
-        CDVPluginResult *pluginResult = nil;
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:commandHolder.callbackId];
-    }
-    @finally{
-        if (easylink_config !=nil) {
-            [easylink_config stopTransmitting];
-        }
-    }
 }
 
 - (void)dealloc:(CDVInvokedUrlCommand*)command
 {
+    [self stopEasyLink ];
+}
+-(void)stopEasyLink{
     NSLog(@"//====dealloc...====");
     if (easylink_config !=nil) {
         [easylink_config stopTransmitting];
+        [easylink_config unInit];
+        easylink_config = nil;
+         easylink_config = [[EASYLINK alloc]initForDebug:true WithDelegate:self];
+        NSLog(@"Stop EasyLink ali sending.");
+    }else{
+         easylink_config = [[EASYLINK alloc]initForDebug:true WithDelegate:self];
     }
-//    if(socket!=nil)
-//    {
-//        [socket close];
-//    }
-    //    easylink_config.delegate = nil;
-    //    easylink_config = nil;
+}
+
+#pragma mark - EasyLink delegate -
+
+- (void)onFound:(NSNumber *)client withName:(NSString *)name mataData: (NSDictionary *)mataDataDict
+{
+    /*Config is success*/
+    NSLog(@"Found by mDNS, client:%d, config success!", [client intValue]);
+    [easylink_config stopTransmitting];
+}
+
+- (void)onFoundByFTC:(NSNumber *)ftcClientTag withConfiguration: (NSDictionary *)configDict
+{
+    /*Config is not success, need to write config to client to finish*/
+    NSLog(@"Found by FTC, client:%d", [ftcClientTag intValue]);
+    [easylink_config configFTCClient:ftcClientTag withConfiguration: [NSDictionary dictionary] ];
+    [easylink_config stopTransmitting];
+}
+
+- (void)onDisconnectFromFTC:(NSNumber *)client  withError:(bool)err;
+{
+    if(err == NO)
+        NSLog(@"Device disconnected, config success!");
+    else
+        NSLog(@"Device disconnected with error, config failed!");
 }
 
 @end
