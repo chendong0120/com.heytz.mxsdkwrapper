@@ -12,27 +12,35 @@
                 <param name="ios-package" value="mxsdkwrapper"/>
             </feature>
         </config-file>
-        <framework src="SystemConfiguration.framework"/>
-        <framework src="CFNetwork.framework"/>
+        <!--<framework src="SystemConfiguration.framework"/>-->
+        <!--<framework src="CFNetwork.framework"/>-->
+        <!--<source-file src="src/ios/NSString+MD5.h"/>-->
+        <!--<source-file src="src/ios/NSString+MD5.m"/>-->
+        <!--<source-file src="src/ios/mxsdkwrapper.m"/>-->
 
-        <source-file src="src/ios/NSString+MD5.h"/>
-        <source-file src="src/ios/NSString+MD5.m"/>
-        <source-file src="src/ios/mxsdkwrapper.m"/>
+        <!--&lt;!&ndash;CocoaAsyncSocket v7.3.3&ndash;&gt;-->
+        <!--<source-file src="src/ios/asyncsocket/AsyncSocket.h"/>-->
+        <!--<source-file src="src/ios/asyncsocket/AsyncSocket.m"/>-->
+        <!--<source-file src="src/ios/asyncsocket/AsyncUdpSocket.h"/>-->
+        <!--<source-file src="src/ios/asyncsocket/AsyncUdpSocket.m"/>-->
 
-        <!--CocoaAsyncSocket v7.3.3-->
-        <source-file src="src/ios/asyncsocket/AsyncSocket.h"/>
-        <source-file src="src/ios/asyncsocket/AsyncSocket.m"/>
-        <source-file src="src/ios/asyncsocket/AsyncUdpSocket.h"/>
-        <source-file src="src/ios/asyncsocket/AsyncUdpSocket.m"/>
+        <!--&lt;!&ndash;Reachability&ndash;&gt;-->
+        <!--<source-file src="src/ios/EasyLink/Reachability/Reachability.h"/>-->
+        <!--<source-file src="src/ios/EasyLink/Reachability/Reachability.m"/>-->
 
-        <!--Reachability-->
-        <source-file src="src/ios/EasyLink/Reachability/Reachability.h"/>
-        <source-file src="src/ios/EasyLink/Reachability/Reachability.m"/>
+        <!--&lt;!&ndash;Easylink lib&ndash;&gt;-->
+        <!--<source-file src="src/ios/EasyLink/Common/EASYLINK.h"/>-->
+        <!--<source-file src="src/ios/EasyLink/Common/route.h"/>-->
+        <!--<source-file framework="true" src="src/ios/EasyLink/Common/libEasyLink.a"/>-->
 
-        <!--Easylink lib-->
-        <source-file src="src/ios/EasyLink/Common/EASYLINK.h"/>
-        <source-file src="src/ios/EasyLink/Common/route.h"/>
-        <source-file framework="true" src="src/ios/EasyLink/Common/libEasyLink.a"/>
+        <source-file src="libs/ios/EasyLink/AXZWifiLinkProtocol.h"/>
+        <source-file src="libs/ios/EasyLink/EasyLink.h"/>
+        <source-file src="libs/ios/EasyLink/EasyLinkForAXZWifiLink.h"/>
+        <source-file src="libs/ios/EasyLink/EasyLinkForAXZWifiLink.m"/>
+        <source-file src="libs/ios/EasyLink/MXCHIPAirlink.h"/>
+        <source-file src="libs/ios/EasyLink/MXCHIPAirlink.m"/>
+        <source-file src="libs/ios/EasyLink/libEasyLink.a"/>
+        <source-file framework="true" src="libs/ios/EasyLink/libEasyLink.a"/>
 
     </platform>
     <platform name="android">
@@ -43,8 +51,13 @@
         </config-file>
         <config-file parent="/*" target="AndroidManifest.xml"/>
         <source-file src="src/android/mxsdkwrapper.java" target-dir="src/com/heytz/mxsdkwrapper"/>
-        <source-file src="libs/dd-plist.jar" target-dir="libs"/>
-        <source-file src="libs/easylink_ftc_out.jar" target-dir="libs"/>
-        <source-file src="libs/jetty-8.1.15.jar" target-dir="libs"/>
+        <!--<source-file src="libs/dd-plist.jar" target-dir="libs"/>-->
+        <!--<source-file src="libs/easylink_ftc_out.jar" target-dir="libs"/>-->
+        <!--<source-file src="libs/jetty-8.1.15.jar" target-dir="libs"/>-->
+
+        <framework src="com.android.support:support-v4:24.1.1+"/>
+        <framework src="io.fogcloud.sdk:mdns:0.0.3"/>
+        <framework src="io.fogcloud.sdk:easylinkv3:0.1.4"/>
+
     </platform>
 </plugin>
