@@ -51,12 +51,11 @@
         <config-file parent="/*" target="AndroidManifest.xml"/>
         <source-file src="src/android/mxsdkwrapper.java" target-dir="src/com/heytz/mxsdkwrapper"/>
         <!--<source-file src="libs/dd-plist.jar" target-dir="libs"/>-->
-        <!--<source-file src="libs/easylink_ftc_out.jar" target-dir="libs"/>-->
+        <source-file src="libs/easylink_ftc_out.jar" target-dir="libs"/>
         <!--<source-file src="libs/jetty-8.1.15.jar" target-dir="libs"/>-->
 
         <framework src="com.android.support:support-v4:24.1.1+"/>
         <framework src="io.fogcloud.sdk:mdns:0.0.3"/>
-        <framework src="io.fogcloud.sdk:easylinkv3:0.1.4"/>
-
+        <!--<framework src="io.fogcloud.sdk:easylinkv3:0.1.4"/>-->
     </platform>
 </plugin>

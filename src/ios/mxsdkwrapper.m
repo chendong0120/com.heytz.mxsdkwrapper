@@ -12,7 +12,7 @@ bool newModuleFound;
 bool enumerating = NO;
 
 @interface mxsdkwrapper : CDVPlugin <NSNetServiceBrowserDelegate,
-        NSNetServiceDelegate> {
+        NSNetServiceDelegate,EasyLinkFTCDelegate> {
     EASYLINK *easylink_config;
 }
 @property(nonatomic, retain, readwrite) NSString *easyLinkCallbakId;
@@ -44,32 +44,18 @@ bool enumerating = NO;
     wlanConfig[KEY_PASSWORD] = wifiKey;
     wlanConfig[KEY_DHCP] = @YES;
 
-    [easylink_config prepareEasyLink:wlanConfig
-                                info:nil
-                                mode:EASYLINK_V2_PLUS
-                             encrypt:[@"" dataUsingEncoding:NSUTF8StringEncoding]];
+    [easylink_config prepareEasyLink_withFTC:wlanConfig info:nil mode:EASYLINK_V2_PLUS];
     [easylink_config transmitSettings];
     _easyLinkCallbakId = command.callbackId;
-    _easyLinkTimer = [NSTimer scheduledTimerWithTimeInterval:60.00
-                                                      target:self
-                                                    selector:@selector(timerStopEasyLink)
-                                                    userInfo:nil
-                                                     repeats:NO];
 }
 
 - (void)dealloc:(CDVInvokedUrlCommand *)command {
     [self stopEasyLink];
 }
--(void)timerStopEasyLink{
-    [self stopEasyLink];
-    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"timer out"] callbackId:_easyLinkCallbakId];
-}
+
 - (void)stopEasyLink {
     NSLog(@"//====dealloc...====");
     if (easylink_config != nil) {
-        if ([_easyLinkTimer isValid]) {
-            [_easyLinkTimer invalidate];
-        }
         [easylink_config stopTransmitting];
         [easylink_config unInit];
         easylink_config = nil;
@@ -121,16 +107,39 @@ bool enumerating = NO;
 - (void)onFoundByFTC:(NSNumber *)ftcClientTag withConfiguration:(NSDictionary *)configDict {
     /*Config is not success, need to write config to client to finish*/
     NSLog(@"Found by FTC, client:%d", [ftcClientTag intValue]);
-//    [easylink_config configFTCClient:ftcClientTag withConfiguration:[NSDictionary dictionary]];
-//    [easylink_config stopTransmitting];
+     CDVPluginResult *pluginResult = nil;
+    @try{
+        [easylink_config configFTCClient:ftcClientTag withConfiguration:configDict];
+        NSString *deviceName = [configDict objectForKey:@"N"];
+        NSLog(@"device name: %@", deviceName);
+        NSString * bssidPrefix = @"C89346";
+        NSString * deviceNameSplit = [deviceName componentsSeparatedByString:@"("][1];
+        NSString  *mac = [bssidPrefix stringByAppendingString:[deviceNameSplit componentsSeparatedByString:@")"][0]];
+        NSString *deviceIp = [[[configDict objectForKey:@"C"][1] objectForKey:@"C"][3] objectForKey:@"C"];
+        NSDictionary *ret = [NSDictionary dictionaryWithObjectsAndKeys:
+                             mac, @"mac",
+                             deviceIp, @"ip",
+                             nil];
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:ret];
+    }@catch (NSException *e){
+        NSLog(@"error - save configuration..." );
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }@finally{
+        if(pluginResult&&_easyLinkCallbakId){
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:_easyLinkCallbakId];
+        }
+        [self stopEasyLink];
+
+    }
 }
 
 - (void)onDisconnectFromFTC:(NSNumber *)client withError:(bool)err; {
-    if (err == NO)
+    if (err == NO){
         NSLog(@"Device disconnected, config success!");
-    else {
+    }else {
         NSLog(@"Device disconnected with error, config failed!");
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"config failed"] callbackId:_easyLinkCallbakId];
     }
+    [self stopEasyLink];
 }
 @end
