@@ -8,9 +8,6 @@ import android.util.Log;
 import com.mxchip.easylink.EasyLinkAPI;
 import com.mxchip.easylink.FTCListener;
 
-import io.fogcloud.sdk.easylink.api.EasyLink;
-import io.fogcloud.sdk.easylink.helper.EasyLinkCallBack;
-import io.fogcloud.sdk.easylink.helper.EasyLinkParams;
 import io.fogcloud.sdk.mdns.api.MDNS;
 import io.fogcloud.sdk.mdns.helper.SearchDeviceCallBack;
 
